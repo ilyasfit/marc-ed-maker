@@ -18,8 +18,10 @@ def contains_forbidden_link(message_content: str, whitelisted_domains: set) -> b
     Returns:
         True, wenn ein verbotener Link gefunden wurde, sonst False.
     """
-    # Ein Regex, um URLs und Domain-Namen zu finden
-    url_pattern = re.compile(r'https?://[^\s/$.?#].[^\s]*|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
+    # Ein Regex, um URLs und Domain-Namen zu finden.
+    # Dieser Regex verhindert, dass ungültige Domain-Namen wie "hoje....na" erkannt werden,
+    # indem er sicherstellt, dass Punkte von alphanumerischen Zeichen gefolgt werden.
+    url_pattern = re.compile(r'https?://[^\s/$.?#].[^\s]*|[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}')
     found_urls = url_pattern.findall(message_content)
 
     if not found_urls:
@@ -51,21 +53,16 @@ def contains_forbidden_link(message_content: str, whitelisted_domains: set) -> b
     
     return False
 
-def find_forbidden_content(message_content: str, forbidden_words: set, seedphrase_patterns: set) -> str | None:
+def find_forbidden_content(message_content: str, forbidden_words: set) -> str | None:
     """
-    Überprüft die Nachricht auf verbotene Wörter oder Seedphrase-Muster.
+    Überprüft die Nachricht auf verbotene Wörter.
     
     Returns:
         Eine Zeichenkette mit dem Grund, wenn ein Verstoß gefunden wurde, sonst None.
     """
     content_lower = message_content.lower()
 
-    # 1. Höchste Priorität: Seedphrases prüfen
-    for pattern in seedphrase_patterns:
-        if re.search(pattern, content_lower):
-            return "Potenzielle Seedphrase gefunden"
-
-    # 2. Verbotene Wörter/Phrasen prüfen
+    # Verbotene Wörter/Phrasen prüfen
     for phrase in forbidden_words:
         # Wir verwenden \b, um sicherzustellen, dass wir nur ganze Wörter matchen.
         # re.escape ist wichtig, falls die Phrasen Sonderzeichen enthalten.

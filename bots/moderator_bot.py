@@ -21,7 +21,7 @@ async def setup_moderator(bot):
         if contains_forbidden_link(message.content, whitelisted_domains):
             moderation_reason = "Partilha de links não autorizados"
         else:
-            moderation_reason = find_forbidden_content(message.content, forbidden_words, seedphrase_patterns)
+            moderation_reason = find_forbidden_content(message.content, forbidden_words)
 
         if moderation_reason:
             await trigger_moderation_action(message, moderation_reason, hugo_user)
