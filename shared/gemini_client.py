@@ -4,6 +4,7 @@ from google.generativeai import types
 import logging
 from shared import config # NEUER IMPORT
 import asyncio
+from datetime import datetime
 
 # Ensure logger is configured if this module is run standalone or if not configured by a higher level script
 if not logging.getLogger().hasHandlers():
@@ -40,6 +41,10 @@ async def get_gemini_response(user_query: str, context_data: str) -> str:
         )
         
         prompt_parts = []
+
+        # Füge das aktuelle Datum und die Uhrzeit hinzu
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        prompt_parts.append(f"Aktuelles Datum und Uhrzeit: {current_time}")
         
         if context_data:
             prompt_parts.append("\n\n--- BEGINN DES BEREITGESTELLTEN KONTEXTES ---\n")
@@ -56,7 +61,7 @@ async def get_gemini_response(user_query: str, context_data: str) -> str:
 
         # Konfiguration für die Generierung
         generation_config = types.GenerationConfig(
-            temperature=0.6,         # Ein guter Mittelwert für informative Antworten
+            temperature=0.3,         # Ein guter Mittelwert für informative Antworten
             max_output_tokens=2000,  # Increased from 1500 to allow longer Discord messages
         )
 

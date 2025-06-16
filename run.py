@@ -22,9 +22,9 @@ async def on_ready():
     logging.info(f'Bot {bot.user} ist online und einsatzbereit.')
     
     # Setze die Bot-Aktivität
-    activity = discord.Activity(name="Tradingview", type=discord.ActivityType.watching)
+    activity = discord.Activity(name="oraculobitvision", type=discord.ActivityType.watching)
     await bot.change_presence(activity=activity)
-    logging.info(f"Bot-Status auf 'Watching Tradingview' gesetzt.")
+    logging.info(f"Bot-Status auf 'Watching oraculobitvision' gesetzt.")
 
     # Lade hier die spezifischen handler-funktionen
     logging.info("Lade Module...")

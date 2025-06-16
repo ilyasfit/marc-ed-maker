@@ -7,6 +7,7 @@ async def setup_moderator(bot):
     # Lade Wissensdatenbanken über den zentralen Config-Pfad
     whitelisted_domains = load_list_from_file(os.path.join(config.MODERATOR_RULES_PATH, 'whitelisted_domains.txt'))
     forbidden_words = load_list_from_file(os.path.join(config.MODERATOR_RULES_PATH, 'forbidden_words.txt'))
+    forbidden_memecoins = load_list_from_file(os.path.join(config.MODERATOR_RULES_PATH, 'memecoins.txt'))
     seedphrase_patterns = load_list_from_file(os.path.join(config.MODERATOR_RULES_PATH, 'seedphrases.txt'))
 
     hugo_user = await bot.fetch_user(config.HUGO_DISCORD_ID)
@@ -20,8 +21,12 @@ async def setup_moderator(bot):
         moderation_reason = None
         if contains_forbidden_link(message.content, whitelisted_domains):
             moderation_reason = "Partilha de links não autorizados"
-        else:
-            moderation_reason = find_forbidden_content(message.content, forbidden_words)
+        
+        if not moderation_reason:
+            moderation_reason = find_forbidden_content(message.content, forbidden_words, "Uso de linguagem/tópico proibido")
+
+        if not moderation_reason:
+            moderation_reason = find_forbidden_content(message.content, forbidden_memecoins, "Menção de memecoins não é permitida")
 
         if moderation_reason:
             await trigger_moderation_action(message, moderation_reason, hugo_user)

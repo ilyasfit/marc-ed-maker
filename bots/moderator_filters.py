@@ -53,21 +53,20 @@ def contains_forbidden_link(message_content: str, whitelisted_domains: set) -> b
     
     return False
 
-def find_forbidden_content(message_content: str, forbidden_words: set) -> str | None:
+def find_forbidden_content(message_content: str, forbidden_phrases: set, reason: str) -> str | None:
     """
-    Überprüft die Nachricht auf verbotene Wörter.
+    Überprüft die Nachricht auf eine Liste verbotener Phrasen.
     
     Returns:
         Eine Zeichenkette mit dem Grund, wenn ein Verstoß gefunden wurde, sonst None.
     """
     content_lower = message_content.lower()
 
-    # Verbotene Wörter/Phrasen prüfen
-    for phrase in forbidden_words:
-        # Wir verwenden \b, um sicherzustellen, dass wir nur ganze Wörter matchen.
-        # re.escape ist wichtig, falls die Phrasen Sonderzeichen enthalten.
-        pattern = r'\b' + re.escape(phrase.lower()) + r'\b'
+    for phrase in forbidden_phrases:
+        # \b sorgt für ganze Wörter, re.escape behandelt Sonderzeichen sicher.
+        # Das optionale #? am Anfang erlaubt das Matchen von Hashtags wie #bome.
+        pattern = r'(#)?\b' + re.escape(phrase.lower()) + r'\b'
         if re.search(pattern, content_lower):
-            return "Uso de linguagem/tópico proibido"
+            return reason
     
     return None
