@@ -5,11 +5,12 @@ import logging
 from shared import config
 from bots.moderator_bot import setup_moderator
 from bots.knowledge_bot import setup_knowledge_bot
+from bots.engagement_bot import setup_engagement
 
 # Logging-Konfiguration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
-# Bot-Initialisierung mit den notwendigen Intents für beide Module
+# Bot-Initialisierung mit den notwendigen Intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
@@ -20,46 +21,25 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logging.info(f'Bot {bot.user} ist online und einsatzbereit.')
-    
-    # Setze die Bot-Aktivität
     activity = discord.Activity(name="oraculobitvision", type=discord.ActivityType.watching)
     await bot.change_presence(activity=activity)
     logging.info(f"Bot-Status auf 'Watching oraculobitvision' gesetzt.")
 
-    # Lade hier die spezifischen handler-funktionen
+async def setup_cogs(bot):
     logging.info("Lade Module...")
-    bot.moderator_check = await setup_moderator(bot)
-    bot.qna_check = await setup_knowledge_bot(bot)
-    logging.info("Alle Module erfolgreich geladen und konfiguriert.")
-
-@bot.event
-async def on_message(message: discord.Message):
-    # Ignoriere den Bot selbst und DMs
-    if message.author == bot.user or message.guild is None:
-        return
-
-    # Priorität 1: Moderation. Wenn der Moderator die Nachricht behandelt, ist der Prozess beendet.
-    moderation_handled = await bot.moderator_check(message)
-    if moderation_handled:
-        return
-
-    # Priorität 2: Q&A.
-    qna_handled = await bot.qna_check(message)
-    if qna_handled:
-        return
-    
-    # Wichtig: Falls wir später Prefix-Commands hinzufügen, muss dies am Ende stehen.
-    await bot.process_commands(message)
+    await setup_moderator(bot)
+    await setup_knowledge_bot(bot)
+    await setup_engagement(bot)
+    logging.info("Alle Module erfolgreich geladen.")
 
 async def main():
-    async with bot:
-        # Starte den Bot
-        await bot.start(config.DISCORD_TOKEN)
+    await setup_cogs(bot)
+    await bot.start(config.DISCORD_TOKEN)
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
         logging.info("Bot wird heruntergefahren.")
-    except ValueError as e:
-        logging.critical(e)
+    except Exception as e:
+        logging.critical(f"Ein unerwarteter Fehler ist aufgetreten: {e}")

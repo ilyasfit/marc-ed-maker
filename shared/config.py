@@ -21,10 +21,30 @@ if _raw_qna_channel_ids:
     except ValueError:
         print("FEHLER: QNA_TARGET_CHANNEL_IDS konnten nicht geparsed werden.")
 
+# --- Engagement Engine Konfiguration ---
+POLL_CHANNEL_ID = int(os.getenv('POLL_CHANNEL_ID', 0))
+POLL_SCHEDULE_1_DAY = int(os.getenv('POLL_SCHEDULE_1_DAY', 2)) # Default: Mittwoch
+POLL_SCHEDULE_1_TIME = os.getenv('POLL_SCHEDULE_1_TIME', '20:00')
+POLL_SCHEDULE_2_DAY = int(os.getenv('POLL_SCHEDULE_2_DAY', 3)) # Default: Donnerstag
+POLL_SCHEDULE_2_TIME = os.getenv('POLL_SCHEDULE_2_TIME', '20:00')
+
+
+# --- Telegram Integration Konfiguration ---
+TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
+TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
+TELEGRAM_CHANNEL_USERNAME = os.getenv('TELEGRAM_CHANNEL_USERNAME')
+TELEGRAM_POST_CHANNEL_ID = int(os.getenv('TELEGRAM_POST_CHANNEL_ID', 0))
+TELEGRAM_SCHEDULE_DAY = int(os.getenv('TELEGRAM_SCHEDULE_DAY', 4)) # Default: Freitag
+TELEGRAM_SCHEDULE_TIME = os.getenv('TELEGRAM_SCHEDULE_TIME', '20:00')
+TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
+TELEGRAM_PASSWORD = os.getenv('TELEGRAM_PASSWORD')
+
+
 # Pfade (zentral definiert für einfache Wartung)
 BASE_DIR = os.path.dirname(dotenv_path)
 MODERATOR_RULES_PATH = os.path.join(BASE_DIR, 'knowledge', 'moderator_rules')
 QNA_CONTEXT_PATH = os.path.join(BASE_DIR, 'knowledge', 'qna_context')
+STATE_PATH = os.path.join(BASE_DIR, 'knowledge', 'state')
 
 # Validierung kritischer Konfigurationen
 if not DISCORD_TOKEN:

@@ -24,7 +24,7 @@ else:
 
 GEMINI_MODEL_NAME = "gemini-2.0-flash" # Aktualisiert per Nutzeranweisung
 
-async def get_gemini_response(user_query: str, context_data: str) -> str:
+async def get_gemini_response(user_query: str, context_data: str, system_instruction_override: str = None) -> str:
     """
     Sendet eine Anfrage an die Gemini API und gibt die Textantwort zurück.
     Kombiniert System-Instruktion, Kontextdaten und Nutzeranfrage.
@@ -35,9 +35,12 @@ async def get_gemini_response(user_query: str, context_data: str) -> str:
         return "Fehler: Die Gemini API ist nicht konfiguriert."
 
     try:
+        # Verwende den Override, falls vorhanden, sonst den Standard aus der Konfiguration
+        final_system_instruction = system_instruction_override if system_instruction_override else config.GEMINI_SYSTEM_INSTRUCTION
+        
         model = genai.GenerativeModel(
             GEMINI_MODEL_NAME,
-            system_instruction=config.GEMINI_SYSTEM_INSTRUCTION
+            system_instruction=final_system_instruction
         )
         
         prompt_parts = []
