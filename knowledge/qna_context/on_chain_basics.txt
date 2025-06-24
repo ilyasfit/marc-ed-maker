@@ -1,1 +1,0 @@
-On-chain analysis involves examining the fundamental data on a public blockchain to gauge the health of a network. This is not trading advice. A key metric is the 'Spent Output Profit Ratio' (SOPR). When SOPR is above 1, it suggests participants are, on average, selling at a profit.

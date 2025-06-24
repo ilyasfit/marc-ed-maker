@@ -92,7 +92,7 @@ class EngagementCog(commands.Cog):
     async def _execute_telegram_engagement(self, ctx: commands.Context = None):
         """Führt die Logik zum Abrufen und Posten von Telegram-Engagement-Fragen aus."""
         if ctx:
-            await ctx.send("Iniciando a tarefa de engajamento do Telegram manualmente...")
+            await ctx.send("Starte die Telegram-Engagement-Aufgabe manuell...")
 
         print("INFO: Starte Telegram-Engagement-Task.")
         
@@ -102,32 +102,32 @@ class EngagementCog(commands.Cog):
         if not telegram_context:
             print("INFO: Telegram-Task wird übersprungen, da kein Kontext gefunden wurde.")
             if ctx:
-                await ctx.send("Não foram encontrados novos conteúdos no canal do Telegram para gerar uma pergunta.")
+                await ctx.send("Im Telegram-Kanal wurden keine neuen Inhalte gefunden, um eine Frage zu generieren.")
             return
             
         # Schritt 2: KI-Prompt formulieren
         system_prompt = (
-            "És 'Bits', o assistente IA da BitVision. A tua tarefa é analisar o seguinte conjunto de notícias e discussões "
-            "recentes de um canal de notícias cripto. O teu objetivo é destilar esta informação numa única, curta e "
-            "envolvente pergunta para a comunidade Discord da BitVision. A pergunta deve ser em português europeu, "
-            "soar natural e orgânica, e provocar debate e discussão. Não resumas as notícias, apenas faz uma pergunta "
-            "inteligente sobre o tema mais relevante que encontrares. Exemplo: 'Malta, com as recentes notícias sobre X, "
-            "como é que acham que isso vai impactar Y? Curioso para saber a vossa opinião.' Sê direto e conciso."
+            "Du bist 'Marc Ed Maker', der KI-Assistent von Bull VS Bear Academy. Deine Aufgabe ist es, die folgende Sammlung von Nachrichten und Diskussionen "
+            "aus einem Krypto-Nachrichtenkanal zu analysieren. Dein Ziel ist es, diese Informationen in eine einzige, kurze und "
+            "ansprechende Frage für die Bull VS Bear Academy zu destillieren. Die Frage sollte auf Deutsch sein, "
+            "natürlich und organisch klingen und zu Debatten und Diskussionen anregen. Fasse die Nachrichten nicht zusammen, sondern stelle nur eine "
+            "intelligente Frage zum relevantesten Thema, das du findest. Beispiel: 'Leute, was glaubt ihr, wie sich die jüngsten Nachrichten über X "
+            "auf Y auswirken werden? Bin gespannt auf eure Meinung.' Sei direkt und prägnant."
         )
         
         if ctx:
-            await ctx.send("Gerando pergunta com a IA...")
+            await ctx.send("Generiere Frage mit der KI...")
 
         question = await get_gemini_response(
-            user_query="Formula uma pergunta de engajamento baseada no contexto fornecido.",
+            user_query="Formuliere eine ansprechende Frage basierend auf dem bereitgestellten Kontext.",
             context_data=telegram_context,
             system_instruction_override=system_prompt
         )
         
-        if not question or "não consegui" in question.lower() or "não pude" in question.lower():
+        if not question or "konnte nicht" in question.lower() or "nicht in der Lage" in question.lower():
             print("FEHLER: Gemini konnte keine gültige Frage generieren.")
             if ctx:
-                await ctx.send("A IA não conseguiu gerar uma pergunta válida a partir do conteúdo.")
+                await ctx.send("Die KI konnte aus dem Inhalt keine gültige Frage generieren.")
             return
 
         # Schritt 3: Frage im Discord-Kanal posten
@@ -144,7 +144,7 @@ class EngagementCog(commands.Cog):
             success_msg = f"INFO: Telegram-Engagement-Post erfolgreich in Kanal '{channel.name}' gesendet."
             print(success_msg)
             if ctx:
-                await ctx.send(f"Pergunta enviada com sucesso para o canal {channel.mention}!")
+                await ctx.send(f"Frage erfolgreich an den Kanal {channel.mention} gesendet!")
         except Exception as e:
             error_msg = f"FEHLER beim Senden der Telegram-Engagement-Frage: {e}"
             print(error_msg)
@@ -195,7 +195,7 @@ class EngagementCog(commands.Cog):
     @commands.is_owner()
     async def post_poll(self, ctx):
         """Posts a poll manually for testing."""
-        await ctx.send("Forçando o envio de um poll...")
+        await ctx.send("Erzwinge das Senden einer Umfrage...")
         await self._execute_poll_posting()
 
     @commands.command()

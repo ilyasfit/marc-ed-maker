@@ -6,6 +6,7 @@ from shared import config
 from bots.moderator_bot import setup_moderator
 from bots.knowledge_bot import setup_knowledge_bot
 from bots.engagement_bot import setup_engagement
+from bots.watcher_guru_bot import start_watcher_guru_bot
 
 # Logging-Konfiguration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
@@ -21,9 +22,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logging.info(f'Bot {bot.user} ist online und einsatzbereit.')
-    activity = discord.Activity(name="oraculobitvision", type=discord.ActivityType.watching)
+    activity = discord.Activity(name="Tradingview", type=discord.ActivityType.watching)
     await bot.change_presence(activity=activity)
     logging.info(f"Bot-Status auf 'Watching oraculobitvision' gesetzt.")
+    
+    # Starte den Watcher.Guru Bot als Hintergrund-Task
+    asyncio.create_task(start_watcher_guru_bot(bot))
 
 async def setup_cogs(bot):
     logging.info("Lade Module...")

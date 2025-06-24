@@ -40,6 +40,11 @@ TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
 TELEGRAM_PASSWORD = os.getenv('TELEGRAM_PASSWORD')
 
 
+# --- Watcher.Guru Bot Konfiguration ---
+WATCHER_GURU_DISCORD_CHANNEL_ID = int(os.getenv('WATCHER_GURU_DISCORD_CHANNEL_ID', 0))
+WATCHER_GURU_TELEGRAM_USERNAME = os.getenv('WATCHER_GURU_TELEGRAM_USERNAME')
+
+
 # Pfade (zentral definiert für einfache Wartung)
 BASE_DIR = os.path.dirname(dotenv_path)
 MODERATOR_RULES_PATH = os.path.join(BASE_DIR, 'knowledge', 'moderator_rules')

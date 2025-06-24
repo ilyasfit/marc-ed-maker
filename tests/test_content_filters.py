@@ -9,18 +9,18 @@ from moderator.filters import find_forbidden_content
 def run_content_filter_tests():
     print("\nFühre Content-Filter-Tests aus...")
     
-    forbidden_words = {"puta", "filho da puta", "esquema"}
+    forbidden_words = {"hure", "hurensohn", "schneeballsystem"}
     seed_patterns = {r"(\b[a-zA-Z]+\b\s){11}\b[a-zA-Z]+\b"}
 
     test_cases = {
-        "Saubere Nachricht": ("Olá, como vai você?", None),
-        "Einzelnes verbotenes Wort": ("Não seja uma puta.", "Uso de linguagem/tópico proibido"),
-        "Verbotenes Wort (Großbuchstaben)": ("Isso é PUTA besteira.", "Uso de linguagem/tópico proibido"),
-        "Mehrteilige Phrase": ("Ele é um filho da puta.", "Uso de linguagem/tópico proibido"),
-        "Potenzielle Seedphrase (12 Wörter)": ("apple banana car dog eleven frog grass house ice juice king lamp", "Potenzielle Seedphrase gefunden"),
-        "Seedphrase mit Satzzeichen": ("my seed is: apple banana car dog eleven frog grass house ice juice king lamp.", "Potenzielle Seedphrase gefunden"),
-        "Zu kurze Phrase (11 Wörter)": ("apple banana car dog eleven frog grass house ice juice king", None),
-        "Wort, das verbotenes Wort enthält": ("Este computador é potente.", None),
+        "Saubere Nachricht": ("Hallo, wie geht es Ihnen?", None),
+        "Einzelnes verbotenes Wort": ("Sei keine Hure.", "Nutzung von verbotener Sprache/Thema"),
+        "Verbotenes Wort (Großbuchstaben)": ("Das ist HUREN-Unsinn.", "Nutzung von verbotener Sprache/Thema"),
+        "Mehrteilige Phrase": ("Er ist ein Hurensohn.", "Nutzung von verbotener Sprache/Thema"),
+        "Potenzielle Seedphrase (12 Wörter)": ("Apfel Banane Auto Hund elf Frosch Gras Haus Eis Saft König Lampe", "Potenzielle Seedphrase gefunden"),
+        "Seedphrase mit Satzzeichen": ("Mein Seed ist: Apfel Banane Auto Hund elf Frosch Gras Haus Eis Saft König Lampe.", "Potenzielle Seedphrase gefunden"),
+        "Zu kurze Phrase (11 Wörter)": ("Apfel Banane Auto Hund elf Frosch Gras Haus Eis Saft König", None),
+        "Wort, das verbotenes Wort enthält": ("Dieser Computer ist leistungsstark.", None),
     }
 
     for name, (message, expected) in test_cases.items():

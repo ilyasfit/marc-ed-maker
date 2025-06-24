@@ -1,2 +1,0 @@
-(\b[a-zA-Z]+\b\s){11}\b[a-zA-Z]+\b
-(\b[a-zA-Z]+\b\s){23}\b[a-zA-Z]+\b

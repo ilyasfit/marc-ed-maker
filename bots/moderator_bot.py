@@ -24,8 +24,8 @@ class ModeratorCog(commands.Cog):
             return
 
         moderation_reason = None
-        if contains_forbidden_link(message.content, self.whitelisted_domains):
-            moderation_reason = "Partilha de links não autorizados"
+        # if contains_forbidden_link(message.content, self.whitelisted_domains):
+        #     moderation_reason = "Partilha de links não autorizados"
         
         if not moderation_reason:
             moderation_reason = find_forbidden_content(message.content, self.forbidden_words, "Uso de linguagem/tópico proibido")
