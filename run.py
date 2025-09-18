@@ -7,6 +7,7 @@ from bots.moderator_bot import setup_moderator
 from bots.knowledge_bot import setup_knowledge_bot
 from bots.engagement_bot import setup_engagement
 from bots.watcher_guru_bot import start_watcher_guru_bot
+from bots.macro_brief_bot import setup_macro_brief
 
 # Logging-Konfiguration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
@@ -34,6 +35,7 @@ async def setup_cogs(bot):
     await setup_moderator(bot)
     await setup_knowledge_bot(bot)
     await setup_engagement(bot)
+    await setup_macro_brief(bot)
     logging.info("Alle Module erfolgreich geladen.")
 
 async def main():

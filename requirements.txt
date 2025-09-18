@@ -3,3 +3,4 @@ python-dotenv==1.1.0
 google-generativeai==0.8.5
 pytz
 telethon
+aiohttp
