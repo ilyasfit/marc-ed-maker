@@ -6,8 +6,7 @@ import asyncio
 import logging
 import os
 
-from shared import config
-from shared.gemini_client import get_gemini_response
+from shared import config, gemini_client, openai_client
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -65,12 +64,33 @@ Achte darauf, dass dein Kommentar zum Kontext passt und humorvoll zu deinem Char
     Die Nachricht: [{news}]
     """
 
-    # Use the shared gemini_client, passing the specific prompt as an override
-    return await get_gemini_response(
-        user_query="Formuliere die Nachricht um.",
-        context_data="", # No additional context needed for this task
-        system_instruction_override=prompt
-    )
+    # Use the configured LLM provider
+    user_query = "Formuliere die Nachricht um."
+    
+    if config.LLM_PROVIDER.lower() == 'gemini':
+        return await gemini_client.get_gemini_response(
+            user_query=user_query,
+            context_data="",
+            system_instruction_override=prompt
+        )
+    else:
+        # Default to OpenAI
+        if config.OPENAI_API_KEY:
+            return await openai_client.get_openai_response(
+                user_query=user_query,
+                context_data="",
+                system_instruction_override=prompt
+            )
+        elif config.GEMINI_API_KEY:
+             logger.warning("OpenAI configured but no key found. Falling back to Gemini.")
+             return await gemini_client.get_gemini_response(
+                user_query=user_query,
+                context_data="",
+                system_instruction_override=prompt
+            )
+        else:
+             logger.error("No valid LLM provider configured.")
+             return f"Fehler: Konnte Nachricht nicht umformulieren. (Kein LLM)"
 
 
 async def start_watcher_guru_bot(bot: commands.Bot):

@@ -21,9 +21,32 @@ def _parse_env_int(value, default: int) -> int:
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 HUGO_DISCORD_ID = _parse_env_int(os.getenv('HUGO_DISCORD_ID'), 0)
 
+# Pfade (zentral definiert für einfache Wartung)
+BASE_DIR = os.path.dirname(dotenv_path)
+MODERATOR_RULES_PATH = os.path.join(BASE_DIR, 'knowledge', 'moderator_rules')
+QNA_CONTEXT_PATH = os.path.join(BASE_DIR, 'knowledge', 'qna_context')
+STATE_PATH = os.path.join(BASE_DIR, 'knowledge', 'state')
+PROMPTS_PATH = os.path.join(BASE_DIR, 'knowledge', 'prompts')
+
+def _load_prompt(filename, default=None):
+    path = os.path.join(PROMPTS_PATH, filename)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except Exception as e:
+        print(f"WARNUNG: Konnte Prompt nicht laden: {path} - {e}")
+        return default
+
 # Q&A Bot (Bits) Config
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-GEMINI_SYSTEM_INSTRUCTION = os.getenv('GEMINI_SYSTEM_INSTRUCTION')
+QNA_SYSTEM_PROMPT = _load_prompt('qna.md', default=os.getenv('GEMINI_SYSTEM_INSTRUCTION'))
+# Backwards compatibility / Alias
+GEMINI_SYSTEM_INSTRUCTION = QNA_SYSTEM_PROMPT
+
+# OpenAI Config
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# Default LLM Provider (openai oder gemini)
+LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'openai')
 
 _raw_qna_channel_ids = os.getenv("QNA_TARGET_CHANNEL_IDS", "")
 QNA_TARGET_CHANNEL_IDS = []
@@ -39,7 +62,7 @@ POLL_SCHEDULE_1_DAY = _parse_env_int(os.getenv('POLL_SCHEDULE_1_DAY'), 2) # Defa
 POLL_SCHEDULE_1_TIME = os.getenv('POLL_SCHEDULE_1_TIME', '20:00')
 POLL_SCHEDULE_2_DAY = _parse_env_int(os.getenv('POLL_SCHEDULE_2_DAY'), 3) # Default: Donnerstag
 POLL_SCHEDULE_2_TIME = os.getenv('POLL_SCHEDULE_2_TIME', '20:00')
-
+ENGAGEMENT_SYSTEM_PROMPT = _load_prompt('engagement.md', default="")
 
 # --- Telegram Integration Konfiguration ---
 TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
@@ -61,6 +84,7 @@ MACRO_BRIEF_CHANNEL_ID = _parse_env_int(os.getenv('MACRO_BRIEF_CHANNEL_ID'), 0)
 MACRO_BRIEF_SCHEDULE_TIME = os.getenv('MACRO_BRIEF_SCHEDULE_TIME', '06:00')
 CRYPTO_CRAFT_URL = os.getenv('CRYPTO_CRAFT_URL')
 FOREX_FACTORY_URL = os.getenv('FOREX_FACTORY_URL')
+MACRO_BRIEF_SYSTEM_PROMPT = _load_prompt('macro_brief.md', default="")
 
 # Grundlegende Validierung
 if not CRYPTO_CRAFT_URL:
@@ -69,12 +93,6 @@ if not CRYPTO_CRAFT_URL:
 if not MACRO_BRIEF_CHANNEL_ID:
     print("WARNUNG: MACRO_BRIEF_CHANNEL_ID ist nicht konfiguriert.")
 
-
-# Pfade (zentral definiert für einfache Wartung)
-BASE_DIR = os.path.dirname(dotenv_path)
-MODERATOR_RULES_PATH = os.path.join(BASE_DIR, 'knowledge', 'moderator_rules')
-QNA_CONTEXT_PATH = os.path.join(BASE_DIR, 'knowledge', 'qna_context')
-STATE_PATH = os.path.join(BASE_DIR, 'knowledge', 'state')
 
 # Validierung kritischer Konfigurationen
 if not DISCORD_TOKEN:

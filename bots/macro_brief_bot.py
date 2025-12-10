@@ -4,8 +4,7 @@ import datetime
 import pytz
 import aiohttp
 import asyncio
-from shared import config
-from shared.gemini_client import get_gemini_response
+from shared import config, gemini_client, openai_client
 from knowledge.macro_data import BIAS_RULES, RELEVANT_EVENT_KEYWORDS
 
 TIMEZONE = pytz.timezone('Europe/Berlin')
@@ -282,7 +281,9 @@ class MacroBriefCog(commands.Cog):
 
                 compact_context = "\n".join(context_lines) if context_lines else "keine Events"
 
-                system_instruction = """Du bist ein professioneller, prägnanter Macro-Briefer für Krypto-Trader.
+                system_instruction = config.MACRO_BRIEF_SYSTEM_PROMPT
+                if not system_instruction:
+                     system_instruction = """Du bist ein professioneller, prägnanter Macro-Briefer für Krypto-Trader.
 Formuliere aus dem bereitgestellten Kontext ein kurzes, lesbares Briefing auf Deutsch (maximal 6 Zeilen):
 - 1–3 Top-Prioritäten (🔴) mit sehr kurzer Begründung (Warum relevant für Krypto?)
 - 1–3 sekundäre Events (🟠) kurz genannt
@@ -291,17 +292,39 @@ Formuliere aus dem bereitgestellten Kontext ein kurzes, lesbares Briefing auf De
 
 Beispielausgabe:
 🔴 14:30 CEST – US Inflationsdaten (CPI/Core): Erwartung ~3.0–3.2%. Kurz: Höher = Druck auf Risikoassets, Niedriger = Erleichterung.
-🟠 16:00 CEST – Retail Sales: Erwartung 0.2–0.4%.\n
+🟠 16:00 CEST – Retail Sales: Erwartung 0.2–0.4%.
+
 📌 Fazit: Fokus auf Inflationsdaten. Überraschung nach oben = Risiko für BTC.
 Bias: 🐻
 
 Wichtig: Halte Sprache einfach, vermeide viele 'wenn/dann' Klauseln. Nutze Zeiten im Format '14:30 CEST'. Doch erwähne nicht die Zeitzone selbst. Formatiere es übersichtlich und lesbar."""
 
-                ai_text = await get_gemini_response(
-                    user_query="Formuliere ein kurzes Daily Macro Briefing basierend auf dem Kontext.",
-                    context_data=compact_context,
-                    system_instruction_override=system_instruction
-                )
+                user_query = "Formuliere ein kurzes Daily Macro Briefing basierend auf dem Kontext."
+                
+                ai_text = ""
+                if config.LLM_PROVIDER.lower() == 'gemini':
+                     ai_text = await gemini_client.get_gemini_response(
+                        user_query=user_query,
+                        context_data=compact_context,
+                        system_instruction_override=system_instruction
+                    )
+                else:
+                    # Default to OpenAI
+                    if config.OPENAI_API_KEY:
+                        ai_text = await openai_client.get_openai_response(
+                            user_query=user_query,
+                            context_data=compact_context,
+                            system_instruction_override=system_instruction
+                        )
+                    elif config.GEMINI_API_KEY:
+                         print("WARNUNG: OpenAI konfiguriert aber kein Key. Fallback auf Gemini.")
+                         ai_text = await gemini_client.get_gemini_response(
+                            user_query=user_query,
+                            context_data=compact_context,
+                            system_instruction_override=system_instruction
+                        )
+                    else:
+                         print("FEHLER: Kein LLM Provider verfügbar.")
 
                 if ai_text and isinstance(ai_text, str) and ai_text.strip():
                     message = f"## MARC's DAILY MACRO – {now.strftime('%d.%m.%Y')}**\n\n{ai_text.strip()}"
