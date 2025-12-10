@@ -135,7 +135,7 @@ class MacroBriefCog(commands.Cog):
 
     def _format_briefing(self, events):
         now = datetime.datetime.now(TIMEZONE)
-        header = f"📅 **Daily Macro Brief – {now.strftime('%d.%m.%Y')}**\n"
+        header = f"## [{now.strftime('%d.%m.')}] Daily Brief\n"
 
         if not events:
             return header + "\nHeute stehen keine wichtigen, Krypto-relevanten Makro-Events an. Ein ruhiger Tag an der Makro-Front!"
@@ -327,7 +327,7 @@ Wichtig: Halte Sprache einfach, vermeide viele 'wenn/dann' Klauseln. Nutze Zeite
                          print("FEHLER: Kein LLM Provider verfügbar.")
 
                 if ai_text and isinstance(ai_text, str) and ai_text.strip():
-                    message = f"## MARC's DAILY MACRO – {now.strftime('%d.%m.%Y')}**\n\n{ai_text.strip()}"
+                    message = f"## [{now.strftime('%d.%m.')}] Daily Brief\n\n{ai_text.strip()}"
                 else:
                     message = self._format_briefing(today_events)
         except Exception as e:
