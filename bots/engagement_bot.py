@@ -7,7 +7,8 @@ import os
 from shared import config
 from knowledge.engagement_data import POLL_QUESTIONS
 from shared import telegram_client # NEU
-from shared.gemini_client import get_gemini_response # NEU
+from shared import config, gemini_client, openai_client
+from shared.gemini_client import get_gemini_response # Kept for backward compat in other functions if needed, but we use switch now
 
 STATE_FILE_PATH = os.path.join(config.STATE_PATH, 'posted_polls_log.txt')
 
@@ -121,11 +122,32 @@ class EngagementCog(commands.Cog):
         if ctx:
             await ctx.send("Generiere Frage mit der KI...")
 
-        question = await get_gemini_response(
-            user_query="Formuliere eine ansprechende Frage basierend auf dem bereitgestellten Kontext.",
-            context_data=telegram_context,
-            system_instruction_override=system_prompt
-        )
+        user_query = "Formuliere eine ansprechende Frage basierend auf dem bereitgestellten Kontext."
+        
+        question = ""
+        if config.LLM_PROVIDER.lower() == 'gemini':
+            question = await gemini_client.get_gemini_response(
+                user_query=user_query,
+                context_data=telegram_context,
+                system_instruction_override=system_prompt
+            )
+        else:
+             # Default to OpenAI
+            if config.OPENAI_API_KEY:
+                question = await openai_client.get_openai_response(
+                    user_query=user_query,
+                    context_data=telegram_context,
+                    system_instruction_override=system_prompt
+                )
+            elif config.GEMINI_API_KEY:
+                print("WARNUNG: OpenAI konfiguriert aber kein Key. Fallback auf Gemini.")
+                question = await gemini_client.get_gemini_response(
+                    user_query=user_query,
+                    context_data=telegram_context,
+                    system_instruction_override=system_prompt
+                )
+            else:
+                 print("FEHLER: Kein LLM Provider verfügbar.")
         
         if not question or "konnte nicht" in question.lower() or "nicht in der Lage" in question.lower():
             print("FEHLER: Gemini konnte keine gültige Frage generieren.")
