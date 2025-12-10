@@ -2,3 +2,5 @@
 .env
 *.session
 env.prod.txt
+lib/
+knowledge/chroma_db/
