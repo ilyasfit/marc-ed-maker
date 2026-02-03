@@ -4,3 +4,9 @@
 env.prod.txt
 lib/
 knowledge/chroma_db/
+
+# State files (runtime data, should not be committed)
+knowledge/state/active_polls.json
+knowledge/state/watcher_guru_processed.json
+knowledge/state/posted_polls_log.txt
+knowledge/state/*.session-journal

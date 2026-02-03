@@ -5,6 +5,7 @@ import pytz
 import random
 import os
 import json
+import asyncio
 from shared import config
 from knowledge.engagement_data import POLL_QUESTIONS
 from shared import telegram_client # NEU
@@ -22,6 +23,7 @@ class EngagementCog(commands.Cog):
         self.active_polls_cache = self._load_active_polls()
         self.embedding_manager = EmbeddingManager()
         self.last_run_minute = None  # Verhindert doppelte Ausführungen
+        self._poll_processing_lock = asyncio.Lock()  # Verhindert concurrent _check_expired_polls
         self.master_scheduler.start()
 
     def _load_posted_indices(self) -> set[int]:
@@ -178,36 +180,36 @@ Welche Antwort ist korrekt und warum?"""
         """
         Prüft alle aktiven Polls auf Ablauf und postet die korrekte Antwort.
         """
-        if not self.active_polls_cache:
+        # Verhindere concurrent execution
+        if self._poll_processing_lock.locked():
             return
         
-        now = datetime.datetime.now(pytz.UTC)
-        expired_polls = []
+        async with self._poll_processing_lock:
+            if not self.active_polls_cache:
+                return
+            
+            now = datetime.datetime.now(pytz.UTC)
+            expired_polls = []
+            
+            for poll in self.active_polls_cache:
+                expires_at = datetime.datetime.fromisoformat(poll["expires_at"])
+                if now >= expires_at:
+                    # Kopie erstellen
+                    expired_polls.append(dict(poll))
+            
+            # SOFORT aus Cache entfernen (innerhalb des Locks)
+            for poll in expired_polls:
+                self._remove_active_poll(poll["message_id"])
         
-        for poll in self.active_polls_cache:
-            expires_at = datetime.datetime.fromisoformat(poll["expires_at"])
-            if now >= expires_at:
-                # Kopie erstellen, um Race Conditions zu vermeiden
-                expired_polls.append(dict(poll))
-        
+        # Verarbeitung AUSSERHALB des Locks (kann lange dauern wegen LLM/Discord)
         for poll in expired_polls:
-            message_id = poll["message_id"]
-            
-            # Race-Condition-Check: Ist die Poll noch im Cache?
-            if not any(p["message_id"] == message_id for p in self.active_polls_cache):
-                print(f"INFO: Poll #{poll['poll_index']} wurde bereits verarbeitet. Überspringe.")
-                continue
-            
             try:
                 print(f"INFO: Poll #{poll['poll_index']} ist abgelaufen. Generiere Antwort...")
-                
-                # Poll SOFORT aus Cache entfernen, bevor async-Operationen starten
-                self._remove_active_poll(message_id)
                 
                 # Kanal holen
                 channel = self.bot.get_channel(poll["channel_id"])
                 if not channel:
-                    print(f"FEHLER: Kanal {poll['channel_id']} nicht gefunden. Überspringe Poll.")
+                    print(f"FEHLER: Kanal {poll['channel_id']} nicht gefunden.")
                     continue
                 
                 # Antwort generieren
@@ -245,22 +247,17 @@ Welche Antwort ist korrekt und warum?"""
         chosen_index = random.choice(available_indices)
         return chosen_index, POLL_QUESTIONS[chosen_index]
 
-    async def _execute_poll_posting(self) -> tuple[bool, str]:
-        """
-        Führt die Logik zum Posten eines Polls aus.
-        Returns: (success: bool, message: str)
-        """
+    async def _execute_poll_posting(self):
+        """Führt die Logik zum Posten eines Polls aus."""
         channel = self.bot.get_channel(config.POLL_CHANNEL_ID)
         if not channel:
-            error = f"Poll-Kanal mit ID {config.POLL_CHANNEL_ID} nicht gefunden."
-            print(f"FEHLER: {error}")
-            return False, error
+            print(f"FEHLER: Poll-Kanal mit ID {config.POLL_CHANNEL_ID} nicht gefunden.")
+            return
 
         chosen_index, poll_data = self._select_poll()
         if poll_data is None:
-            error = "Konnte keinen Poll zum Posten auswählen."
-            print(f"FEHLER: {error}")
-            return False, error
+            print("FEHLER: Konnte keinen Poll zum Posten auswählen.")
+            return
 
         try:
             print(f"INFO: Führe Poll-Posting-Task aus für Poll #{chosen_index}.")
@@ -287,12 +284,8 @@ Welche Antwort ist korrekt und warum?"""
             )
             
             self._save_posted_index(chosen_index)
-            return True, f"Poll #{chosen_index} gepostet (Message-ID: {message.id})"
         except Exception as e:
-            import traceback
-            error = f"Fehler beim Senden des Polls: {e}\n{traceback.format_exc()}"
-            print(f"FEHLER: {error}")
-            return False, str(e)
+            print(f"FEHLER beim Senden des Polls: {e}")
 
     async def _execute_telegram_engagement(self, ctx: commands.Context = None):
         """Führt die Logik zum Abrufen und Posten von Telegram-Engagement-Fragen aus."""
@@ -428,25 +421,7 @@ Welche Antwort ist korrekt und warum?"""
     async def post_poll(self, ctx):
         """Posts a poll manually for testing."""
         await ctx.send("Erzwinge das Senden einer Umfrage...")
-        
-        # Debug: Zeige konfigurierte Channel-ID
-        if not config.POLL_CHANNEL_ID:
-            await ctx.send("❌ **FEHLER:** `POLL_CHANNEL_ID` ist nicht in `.env` konfiguriert!")
-            return
-        
-        channel = self.bot.get_channel(config.POLL_CHANNEL_ID)
-        if not channel:
-            await ctx.send(f"❌ **FEHLER:** Kanal mit ID `{config.POLL_CHANNEL_ID}` nicht gefunden!")
-            return
-        
-        await ctx.send(f"📍 Ziel-Kanal: {channel.mention}")
-        
-        success, message = await self._execute_poll_posting()
-        
-        if success:
-            await ctx.send(f"✅ **Erfolg:** {message}\nPrüfe mit `!list_active_polls`")
-        else:
-            await ctx.send(f"❌ **FEHLER beim Poll-Posting:**\n```\n{message[:1500]}\n```")
+        await self._execute_poll_posting()
 
     @commands.command()
     @commands.is_owner()
@@ -530,58 +505,6 @@ Welche Antwort ist korrekt und warum?"""
         # Direkt auslösen
         await self._check_expired_polls()
         await ctx.send("Poll-Reveal ausgelöst!")
-
-    @commands.command()
-    @commands.is_owner()
-    async def post_poll_short(self, ctx, minutes: int = 2):
-        """
-        Postet eine Poll und setzt das Tracking-Expiry auf wenige Minuten für QA-Tests.
-        Die Discord-Poll läuft normal 1h, aber unser Bot denkt sie läuft nur X Minuten.
-        Usage: !post_poll_short [minutes]
-        Default: 2 Minuten
-        """
-        if minutes < 1 or minutes > 60:
-            await ctx.send("Minuten müssen zwischen 1 und 60 liegen.")
-            return
-        
-        channel = self.bot.get_channel(config.POLL_CHANNEL_ID)
-        if not channel:
-            await ctx.send(f"❌ **FEHLER:** Kanal mit ID `{config.POLL_CHANNEL_ID}` nicht gefunden!")
-            return
-        
-        chosen_index, poll_data = self._select_poll()
-        if poll_data is None:
-            await ctx.send("❌ Konnte keinen Poll auswählen.")
-            return
-        
-        await ctx.send(f"📍 Poste QA-Test-Poll in: {channel.mention}\n⏱️ Tracking-Expiry: {minutes} Min (Discord-Poll läuft 1h)")
-        
-        try:
-            # Discord-Poll muss mindestens 1 Stunde laufen
-            poll = discord.Poll(
-                question=f"[QA-TEST] {poll_data['question']}",
-                duration=datetime.timedelta(hours=1)
-            )
-            for answer in poll_data["answers"]:
-                poll.add_answer(text=answer["text"], emoji=answer["emoji"])
-            
-            message = await channel.send("@everyone", poll=poll)
-            
-            # Aber unser Tracking läuft nur X Minuten
-            expires_at = datetime.datetime.now(pytz.UTC) + datetime.timedelta(minutes=minutes)
-            self._add_active_poll(
-                message_id=message.id,
-                channel_id=channel.id,
-                poll_index=chosen_index,
-                poll_data=poll_data,
-                expires_at=expires_at
-            )
-            
-            self._save_posted_index(chosen_index)
-            await ctx.send(f"✅ **QA-Test-Poll gepostet!**\n• Poll #{chosen_index}\n• Message-ID: {message.id}\n• Antwort-Reveal in: **{minutes} Min** ({expires_at.strftime('%H:%M:%S UTC')})\n• Der Scheduler prüft alle 60s - Antwort kommt automatisch!")
-        except Exception as e:
-            import traceback
-            await ctx.send(f"❌ **FEHLER:** {e}\n```{traceback.format_exc()[:500]}```")
 
 # Setup-Funktion, die von run.py aufgerufen wird
 async def setup_engagement(bot):
