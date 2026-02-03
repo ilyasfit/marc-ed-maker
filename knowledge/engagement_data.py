@@ -192,7 +192,7 @@ POLL_QUESTIONS = [
         "question": "Welcher Winkel ist laut W.D. Gann's Theorie der wichtigste für die Marktanalyse?",
         "answers": [
             {"text": "Der 45-Grad-Winkel", "emoji": "📐"},
-            {"text": "Der 90-Grad-Winkel", "emoji": "∟"},
+            {"text": "Der 90-Grad-Winkel", "emoji": "📏"},
             {"text": "Der 30-Grad-Winkel", "emoji": "📏"},
             {"text": "Der 61.8-Grad-Winkel", "emoji": "🌀"}
         ]

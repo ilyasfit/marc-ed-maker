@@ -45,6 +45,10 @@ GEMINI_SYSTEM_INSTRUCTION = QNA_SYSTEM_PROMPT
 
 # OpenAI Config
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+# xAI Config
+XAI_API_KEY = os.getenv('XAI_API_KEY')
+
 # Default LLM Provider (openai oder gemini)
 LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'openai')
 
